@@ -7,6 +7,7 @@ from pathlib import Path
 
 def test_gui_module_imports() -> None:
     import tico_asset_builder.gui as gui
+    import tico_asset_builder.modern_gui as modern_gui
     from tico_asset_builder.config import CONSOLES
 
     assert gui.GUI_CONSOLES == tuple(CONSOLES)
@@ -15,6 +16,24 @@ def test_gui_module_imports() -> None:
     assert "wii" in gui.GUI_CONSOLES
     assert gui.COVER_STYLES == ("fit", "crop", "stretch")
     assert gui.ScrollableFrame.__name__ == "ScrollableFrame"
+    assert modern_gui.MODERN_GUI_COMMAND == "tico-asset-builder-modern-gui"
+    assert isinstance(modern_gui.customtkinter_available(), bool)
+    assert modern_gui.MODERN_GUI_PAGES[0] == "Build Complete Tico Folder"
+    assert len(modern_gui.MODERN_GUI_PAGES) == len(set(modern_gui.MODERN_GUI_PAGES))
+    assert modern_gui.NAVIGATION_USES_STACKED_PAGES
+    assert modern_gui.APP_BG == "#171A1F"
+    assert modern_gui.PAGE_BG == "#1E222A"
+    assert modern_gui.ACCENT == "#19C7E8"
+    assert modern_gui.DOT_CORAL == "#FF9A7A"
+    assert modern_gui.CARD_BG.startswith("#")
+    assert modern_gui.FIELD_HEIGHT > 0
+    assert modern_gui.BUTTON_HEIGHT > 0
+    assert {"primary", "secondary", "quiet"}.issubset(modern_gui.BUTTON_ROLE_STYLES)
+    assert modern_gui.button_grid_position(4, max_columns=3) == (1, 1)
+    assert modern_gui.is_redundant_navigation("Reports", "Reports")
+    assert not modern_gui.is_redundant_navigation("Reports", "Log / Status")
+    assert modern_gui.themed_raw_background_options()["bg"] == modern_gui.PAGE_BG
+    assert modern_gui.themed_raw_background_options()["highlightthickness"] == 0
 
 
 def test_gui_entry_point_is_declared() -> None:
@@ -22,7 +41,28 @@ def test_gui_entry_point_is_declared() -> None:
     data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
 
     assert data["project"]["scripts"]["tico-asset-builder-gui"] == "tico_asset_builder.gui:main"
+    assert data["project"]["scripts"]["tico-asset-builder-modern-gui"] == "tico_asset_builder.modern_gui:main"
     assert data["project"]["scripts"]["tico-build-tico-folder"] == "tico_asset_builder.combined_cli:main"
+
+
+def test_gui_help_modes_do_not_launch_windows(capsys) -> None:
+    import tico_asset_builder.gui as gui
+    import tico_asset_builder.modern_gui as modern_gui
+
+    assert gui.main(["--help"]) == 0
+    assert "desktop GUI" in capsys.readouterr().out
+    assert modern_gui.main(["--help"]) == 0
+    assert "CustomTkinter" in capsys.readouterr().out
+
+
+def test_open_folder_command_for_platform() -> None:
+    from tico_asset_builder.gui import open_folder_command_for_platform
+
+    folder = Path("/tmp/example")
+
+    assert open_folder_command_for_platform(folder, "darwin", "posix") == ["open", str(folder)]
+    assert open_folder_command_for_platform(folder, "win32", "nt") == "startfile"
+    assert open_folder_command_for_platform(folder, "linux", "posix") == ["xdg-open", str(folder)]
 
 
 def test_scroll_helpers_only_scroll_when_needed() -> None:

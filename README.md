@@ -77,13 +77,28 @@ Reports help users find missing covers, skipped zip contents, ignored files, and
 
 ## Installation For Normal Users
 
-From this project folder:
+### macOS / Linux
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install .
+```
+
+### Windows PowerShell
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install .
+```
+
+Launch the stable GUI:
+
+```bash
+tico-asset-builder-gui
 ```
 
 If you are offline and dependencies are already installed in `.venv`, this local fallback can help:
@@ -192,6 +207,15 @@ GUI tabs:
 - **Log / Status**: watch progress, review messages, and request cancellation.
 
 The GUI has smart default output folders, safety checks, progress feedback, a cancel button, and a report viewer. Launching Tkinter apps from inside Codex may crash on macOS; use normal Terminal for the GUI.
+
+Optional modern GUI:
+
+```bash
+python -m pip install ".[modern-gui]"
+tico-asset-builder-modern-gui
+```
+
+The modern GUI uses CustomTkinter for a dark, card-based interface with a polished sidebar and stronger workflow cards. It is optional. The original `tico-asset-builder-gui` command remains available as the stable Tkinter GUI.
 
 When you click **Analyze Library**, the GUI detects supported console folders from `SOURCE/roms/{console}/` or `SOURCE/{console}/` and builds the console checkbox list from the same backend console configuration used by the CLI. Detected systems are shown by default with counts for zipped ROMs, extracted ROMs, and local images. Unsupported folders are shown in the analysis summary but are not processed unless the backend supports them. Folder names should use supported system slugs such as `gb`, `gba`, `snes`, `psp`, `dc`, `saturn`, `wii`, `sega-cd`, `master-system`, `game-gear`, or `gc`.
 
@@ -365,6 +389,8 @@ python -m pytest tests/test_stress_workflows.py
 ```
 
 The stress tests use fake ROM placeholder files and generated artwork only.
+
+The project is tested through GitHub Actions on Windows, macOS, and Linux with Python 3.11 and 3.12.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidelines.
 

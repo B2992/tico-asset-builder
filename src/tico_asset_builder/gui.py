@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import csv
+import os
 import threading
 import tkinter as tk
 import subprocess
+import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +30,13 @@ REPORT_DEFINITIONS = {
     "missing_covers": ("Missing Covers", "missing-covers.csv", "No missing covers found."),
     "skipped_files": ("Ignored Files", "skipped-files.csv", "No ignored files found."),
 }
+GUI_HELP = """Tico Asset Builder desktop GUI.
+
+Usage:
+  tico-asset-builder-gui
+
+Launches the stable Tkinter desktop interface.
+"""
 
 
 @dataclass(frozen=True)
@@ -872,7 +881,7 @@ class TicoAssetBuilderGui:
         if not folder.exists() or not folder.is_dir():
             self._log(f"Cannot open {label}: {folder} does not exist yet.")
             return
-        subprocess.run(["open", str(folder)], check=False)
+        open_folder_in_system_file_manager(folder)
         self._log(f"Opened {label}: {folder}")
 
     def open_prep_reports_folder(self) -> None:
@@ -1219,7 +1228,30 @@ def format_summary_text(summary: dict[str, int]) -> str:
     )
 
 
-def main() -> int:
+def open_folder_in_system_file_manager(folder: Path) -> None:
+    """Open a folder with the platform's file manager without assuming macOS."""
+    command = open_folder_command_for_platform(folder, sys.platform, os.name)
+    if command == "startfile":
+        os.startfile(str(folder))  # type: ignore[attr-defined]
+    else:
+        subprocess.run(command, check=False)
+
+
+def open_folder_command_for_platform(folder: Path, platform_name: str, os_name: str) -> list[str] | str:
+    """Return the platform-specific folder-open action used by the GUI."""
+    if platform_name == "darwin":
+        return ["open", str(folder)]
+    if os_name == "nt":
+        return "startfile"
+    return ["xdg-open", str(folder)]
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if any(arg in {"-h", "--help"} for arg in args):
+        print(GUI_HELP)
+        return 0
+
     root = tk.Tk()
     root.geometry("950x700")
     root.minsize(800, 600)

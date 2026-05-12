@@ -27,11 +27,15 @@ dependencies = [
   "RapidFuzz>=3.0",
 ]
 
+[project.optional-dependencies]
+modern-gui = ["customtkinter>=5.2"]
+
 [project.scripts]
 tico-asset-builder = "tico_asset_builder.cli:main"
 tico-prepare-roms = "tico_asset_builder.prepare_cli:main"
 tico-build-tico-folder = "tico_asset_builder.combined_cli:main"
 tico-asset-builder-gui = "tico_asset_builder.gui:main"
+tico-asset-builder-modern-gui = "tico_asset_builder.modern_gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
