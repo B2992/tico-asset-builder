@@ -14,6 +14,7 @@ def test_gui_module_imports() -> None:
     assert "dc" in gui.GUI_CONSOLES
     assert "wii" in gui.GUI_CONSOLES
     assert gui.COVER_STYLES == ("fit", "crop", "stretch")
+    assert gui.ScrollableFrame.__name__ == "ScrollableFrame"
 
 
 def test_gui_entry_point_is_declared() -> None:
@@ -22,6 +23,19 @@ def test_gui_entry_point_is_declared() -> None:
 
     assert data["project"]["scripts"]["tico-asset-builder-gui"] == "tico_asset_builder.gui:main"
     assert data["project"]["scripts"]["tico-build-tico-folder"] == "tico_asset_builder.combined_cli:main"
+
+
+def test_scroll_helpers_only_scroll_when_needed() -> None:
+    from tico_asset_builder.gui import is_scroll_needed, normalized_mousewheel_units
+
+    assert not is_scroll_needed(500, 500)
+    assert not is_scroll_needed(400, 500)
+    assert is_scroll_needed(501, 500)
+    assert normalized_mousewheel_units(0) == 0
+    assert normalized_mousewheel_units(1) == -1
+    assert normalized_mousewheel_units(120) == -1
+    assert normalized_mousewheel_units(-1) == 1
+    assert normalized_mousewheel_units(-120) == 1
 
 
 def test_gui_dry_run_summary_is_explicit() -> None:

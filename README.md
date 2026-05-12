@@ -37,6 +37,26 @@ This repository should not contain ROMs, BIOS files, copyrighted cover art, copi
 
 Tests use fake placeholder ROM files and generated Pillow images only.
 
+## Screenshots / Visual Overview
+
+**Build Complete Tico Folder** is the recommended workflow for most users.
+
+![Build Complete Tico Folder GUI](docs/images/gui-build-complete-folder.png)
+
+The combined workflow creates both `tico/roms/` and `tico/assets/covers/` in one final output folder.
+
+**Extract ROMs Only** is an advanced workflow for creating a ROM-only prepared folder.
+
+![Extract ROMs Only GUI](docs/images/gui-extract-roms-only.png)
+
+**Build Covers Only** is an advanced workflow for creating resized Tico cover assets from an existing ROM folder and local artwork.
+
+![Build Covers Only GUI](docs/images/gui-build-covers-only.png)
+
+Reports help users find missing covers, skipped zip contents, ignored files, and matched cover results.
+
+![Reports GUI](docs/images/gui-reports.png)
+
 ## What It Does
 
 - Prepares zipped ROM libraries into extracted ROM-only folders.
@@ -174,6 +194,8 @@ GUI tabs:
 The GUI has smart default output folders, safety checks, progress feedback, a cancel button, and a report viewer. Launching Tkinter apps from inside Codex may crash on macOS; use normal Terminal for the GUI.
 
 When you click **Analyze Library**, the GUI detects supported console folders from `SOURCE/roms/{console}/` or `SOURCE/{console}/` and builds the console checkbox list from the same backend console configuration used by the CLI. Detected systems are shown by default with counts for zipped ROMs, extracted ROMs, and local images. Unsupported folders are shown in the analysis summary but are not processed unless the backend supports them. Folder names should use supported system slugs such as `gb`, `gba`, `snes`, `psp`, `dc`, `saturn`, `wii`, `sega-cd`, `master-system`, `game-gear`, or `gc`.
+
+The main workflow tabs are scrollable. On smaller screens, or after analyzing a large library with many detected systems, scroll within the tab if controls are not visible.
 
 ## Input Folder Examples
 
@@ -316,7 +338,7 @@ tico-asset-builder-gui
 
 ### The GUI window is too tall or cramped
 
-The GUI uses tabs to fit smaller screens. If it still feels cramped, resize the window and use the **Advanced: Build Covers Only**, **Reports**, and **Log / Status** tabs separately.
+The GUI uses tabs to fit smaller screens, and the main workflow tabs scroll vertically. If it still feels cramped, resize the window and scroll within the current tab.
 
 ### Output folder already exists
 

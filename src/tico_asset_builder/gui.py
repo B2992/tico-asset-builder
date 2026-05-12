@@ -70,6 +70,72 @@ class LibraryAnalysis:
         return sum(item.local_images for item in self.consoles.values())
 
 
+class ScrollableFrame(ttk.Frame):
+    """A reusable vertical scroll container for crowded Tkinter tabs."""
+
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        self.canvas = tk.Canvas(self, highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.content = ttk.Frame(self.canvas)
+        self._content_window = self.canvas.create_window((0, 0), window=self.content, anchor="nw")
+        self._scrolling_needed = False
+
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+
+        self.content.bind("<Configure>", self._update_scrollregion)
+        self.canvas.bind("<Configure>", self._resize_content)
+        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.content.bind("<MouseWheel>", self._on_mousewheel)
+
+    def _update_scrollregion(self, _event=None) -> None:
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self._update_scrollbar_state()
+
+    def _resize_content(self, event) -> None:
+        self.canvas.itemconfigure(self._content_window, width=event.width)
+        self._update_scrollbar_state()
+
+    def _update_scrollbar_state(self) -> None:
+        content_height = self.content.winfo_reqheight()
+        visible_height = self.canvas.winfo_height()
+        scrolling_needed = is_scroll_needed(content_height, visible_height)
+        if scrolling_needed == self._scrolling_needed:
+            return
+
+        self._scrolling_needed = scrolling_needed
+        if scrolling_needed:
+            self.scrollbar.grid(row=0, column=1, sticky="ns")
+        else:
+            self.canvas.yview_moveto(0)
+            self.scrollbar.grid_remove()
+
+    def _on_mousewheel(self, event) -> None:
+        # Bind only to this canvas/content, not globally, so other scrollable
+        # areas do not double-scroll. macOS trackpads emit small deltas, so
+        # normalize them to one gentle unit at a time.
+        if not self._scrolling_needed:
+            return "break"
+        units = normalized_mousewheel_units(event.delta)
+        if units:
+            self.canvas.yview_scroll(units, "units")
+        return "break"
+
+
+def is_scroll_needed(content_height: int, visible_height: int) -> bool:
+    return content_height > visible_height
+
+
+def normalized_mousewheel_units(delta: int) -> int:
+    if delta == 0:
+        return 0
+    return -1 if delta > 0 else 1
+
+
 class TicoAssetBuilderGui:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -119,16 +185,32 @@ class TicoAssetBuilderGui:
         self.main_notebook = ttk.Notebook(container)
         self.main_notebook.grid(row=0, column=0, sticky="nsew")
 
-        combined_tab = ttk.Frame(self.main_notebook, padding=10)
-        prepare_tab = ttk.Frame(self.main_notebook, padding=10)
-        build_tab = ttk.Frame(self.main_notebook, padding=10)
+        combined_tab_shell = ttk.Frame(self.main_notebook)
+        prepare_tab_shell = ttk.Frame(self.main_notebook)
+        build_tab_shell = ttk.Frame(self.main_notebook)
         reports_tab = ttk.Frame(self.main_notebook, padding=10)
         log_tab = ttk.Frame(self.main_notebook, padding=10)
-        self.main_notebook.add(combined_tab, text="Build Complete Tico Folder")
-        self.main_notebook.add(prepare_tab, text="Advanced: Extract ROMs Only")
-        self.main_notebook.add(build_tab, text="Advanced: Build Covers Only")
+        self.main_notebook.add(combined_tab_shell, text="Build Complete Tico Folder")
+        self.main_notebook.add(prepare_tab_shell, text="Advanced: Extract ROMs Only")
+        self.main_notebook.add(build_tab_shell, text="Advanced: Build Covers Only")
         self.main_notebook.add(reports_tab, text="Reports")
         self.main_notebook.add(log_tab, text="Log / Status")
+
+        combined_scroll = ScrollableFrame(combined_tab_shell)
+        prepare_scroll = ScrollableFrame(prepare_tab_shell)
+        build_scroll = ScrollableFrame(build_tab_shell)
+        for shell, scroll in (
+            (combined_tab_shell, combined_scroll),
+            (prepare_tab_shell, prepare_scroll),
+            (build_tab_shell, build_scroll),
+        ):
+            shell.columnconfigure(0, weight=1)
+            shell.rowconfigure(0, weight=1)
+            scroll.grid(row=0, column=0, sticky="nsew")
+
+        combined_tab = combined_scroll.content
+        prepare_tab = prepare_scroll.content
+        build_tab = build_scroll.content
 
         for tab in (prepare_tab, build_tab, combined_tab, reports_tab, log_tab):
             tab.columnconfigure(0, weight=1)
