@@ -16,8 +16,9 @@ from .builder import build_assets
 from .combined import build_tico_folder, validate_combined_output_path
 from .config import CONSOLES, IMAGE_EXTENSIONS, IMAGE_FOLDER_NAMES
 from .prep import PrepResult, prepare_roms
+from .system_aliases import ConsoleFolderMatch, resolve_console_folder_name
 
-GUI_CONSOLES = ("gb", "gbc", "gba", "nes", "snes", "genesis", "psx")
+GUI_CONSOLES = tuple(CONSOLES)
 COVER_STYLES = ("fit", "crop", "stretch")
 REPORT_DEFINITIONS = {
     "prepared_roms": ("Prepared ROMs", "prepared-roms.csv", "No prepared ROMs found."),
@@ -40,6 +41,7 @@ class CsvReport:
 @dataclass(frozen=True)
 class ConsoleAnalysis:
     console: str
+    source_folder_name: str
     zipped_roms: int
     extracted_roms: int
     local_images: int
@@ -90,6 +92,7 @@ class TicoAssetBuilderGui:
         self.progress_value = tk.DoubleVar(value=0)
         self.report_summary_text = tk.StringVar(value="Reports: not loaded yet")
         self.console_vars = {console: tk.BooleanVar() for console in GUI_CONSOLES}
+        self._visible_console_keys: list[str] = []
         self._last_prepared_output_suggestion = ""
         self._last_asset_output_suggestion = ""
         self._last_artwork_source_suggestion = ""
@@ -176,18 +179,16 @@ class TicoAssetBuilderGui:
             row=3, column=0, columnspan=3, sticky="w", padx=8, pady=4
         )
 
-        console_frame = ttk.Frame(prepare_frame)
-        console_frame.grid(row=4, column=0, columnspan=3, sticky="w", padx=8, pady=4)
-        ttk.Label(console_frame, text="Console filters:").grid(row=0, column=0, sticky="w", padx=(0, 8))
-        for index, console in enumerate(GUI_CONSOLES, start=1):
-            ttk.Checkbutton(
-                console_frame,
-                text=console,
-                variable=self.console_vars[console],
-                command=self._mark_console_selection_changed,
-            ).grid(
-                row=0, column=index, sticky="w", padx=3
-            )
+        console_frame = ttk.LabelFrame(prepare_frame, text="Console Filters")
+        console_frame.grid(row=4, column=0, columnspan=3, sticky="ew", padx=8, pady=4)
+        console_frame.columnconfigure(0, weight=1)
+        ttk.Label(
+            console_frame,
+            text="Analyze a source library to show detected supported systems.",
+        ).grid(row=0, column=0, sticky="w", padx=6, pady=(4, 2))
+        self.console_options_frame = ttk.Frame(console_frame)
+        self.console_options_frame.grid(row=1, column=0, sticky="ew", padx=6, pady=(0, 6))
+        self._render_console_checkboxes([])
 
         selection_frame = ttk.Frame(prepare_frame)
         selection_frame.grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=2)
@@ -195,6 +196,9 @@ class TicoAssetBuilderGui:
         ttk.Button(selection_frame, text="Clear All", command=self.clear_all_consoles).grid(row=0, column=1, padx=6)
         ttk.Button(selection_frame, text="Select Detected Only", command=self.select_detected_consoles).grid(
             row=0, column=2, padx=6
+        )
+        ttk.Button(selection_frame, text="Show All Supported", command=self.show_all_supported_consoles).grid(
+            row=0, column=3, padx=6
         )
 
         analysis_frame = ttk.LabelFrame(prepare_frame, text="Detected Console Summary")
@@ -449,6 +453,38 @@ class TicoAssetBuilderGui:
     def _mark_console_selection_changed(self) -> None:
         self._console_selection_changed_by_user = True
 
+    def _render_console_checkboxes(
+        self,
+        console_keys: list[str],
+        analysis: LibraryAnalysis | None = None,
+    ) -> None:
+        self._visible_console_keys = list(console_keys)
+        for child in self.console_options_frame.winfo_children():
+            child.destroy()
+
+        if not console_keys:
+            ttk.Label(self.console_options_frame, text="No supported systems detected yet.").grid(
+                row=0, column=0, sticky="w"
+            )
+            return
+
+        for index, console in enumerate(console_keys):
+            row = index // 2
+            column = index % 2
+            ttk.Checkbutton(
+                self.console_options_frame,
+                text=console_checkbox_label(console, analysis),
+                variable=self.console_vars[console],
+                command=self._mark_console_selection_changed,
+            ).grid(row=row, column=column, sticky="w", padx=(0, 16), pady=2)
+
+    def _set_console_options(
+        self,
+        console_keys: list[str],
+        analysis: LibraryAnalysis | None,
+    ) -> None:
+        self.root.after(0, lambda: self._render_console_checkboxes(console_keys, analysis))
+
     def analyze_source_library(self) -> None:
         source = self.source_library.get().strip()
         if not source:
@@ -473,6 +509,7 @@ class TicoAssetBuilderGui:
         self._log(f"Total local images: {analysis.total_local_images}")
         if analysis.unsupported_folders:
             self._log(f"Unsupported folders found: {', '.join(analysis.unsupported_folders)}")
+        self._set_console_options(console_keys_for_analysis(analysis), analysis)
         if not self._console_selection_changed_by_user:
             self._set_console_selection(detected)
         self._set_status("Ready")
@@ -489,7 +526,7 @@ class TicoAssetBuilderGui:
 
     def select_all_consoles(self) -> None:
         self._console_selection_changed_by_user = True
-        self._set_console_selection(GUI_CONSOLES)
+        self._set_console_selection(self._visible_console_keys or GUI_CONSOLES)
 
     def clear_all_consoles(self) -> None:
         self._console_selection_changed_by_user = True
@@ -500,7 +537,11 @@ class TicoAssetBuilderGui:
         if not self._last_analysis:
             self._warn("Analyze a source library before selecting detected consoles.")
             return
-        self._set_console_selection(self._last_analysis.detected_consoles)
+        self._set_console_options(console_keys_for_analysis(self._last_analysis), self._last_analysis)
+        self._set_console_selection(select_detected_console_keys(self._last_analysis))
+
+    def show_all_supported_consoles(self) -> None:
+        self._set_console_options(console_keys_for_analysis(self._last_analysis, show_all_supported=True), self._last_analysis)
 
     def _set_console_selection(self, selected: list[str] | tuple[str, ...]) -> None:
         selected_set = set(selected)
@@ -941,18 +982,20 @@ def analyze_library(source: Path) -> LibraryAnalysis:
     consoles: dict[str, ConsoleAnalysis] = {}
     unsupported_folders: list[str] = []
 
+    folder_matches: list[tuple[ConsoleFolderMatch, Path]] = []
     if rom_root.is_dir():
-        unsupported_folders = sorted(
-            child.name
-            for child in rom_root.iterdir()
-            if child.is_dir()
-            and child.name not in CONSOLES
-            and child.name.lower() not in IMAGE_FOLDER_NAMES
-            and not child.name.startswith(".")
-        )
+        for child in sorted(rom_root.iterdir()):
+            if not child.is_dir() or child.name.startswith(".") or child.name.lower() in IMAGE_FOLDER_NAMES:
+                continue
+            match = resolve_console_folder_name(child.name)
+            if match:
+                if match.console not in consoles:
+                    folder_matches.append((match, child))
+            else:
+                unsupported_folders.append(child.name)
 
-    for console, config in CONSOLES.items():
-        console_dir = rom_root / console
+    for match, console_dir in folder_matches:
+        config = CONSOLES[match.console]
         if not console_dir.is_dir():
             continue
         zipped_roms = sum(1 for path in console_dir.glob("*.zip") if path.is_file() and not path.name.startswith("."))
@@ -962,7 +1005,7 @@ def analyze_library(source: Path) -> LibraryAnalysis:
             if path.is_file() and not path.name.startswith(".") and _effective_suffix(path) in config.extensions
         )
         local_images = _count_local_images(console_dir)
-        consoles[console] = ConsoleAnalysis(console, zipped_roms, extracted_roms, local_images)
+        consoles[match.console] = ConsoleAnalysis(match.console, match.folder_name, zipped_roms, extracted_roms, local_images)
 
     return LibraryAnalysis(source=source, consoles=consoles, unsupported_folders=unsupported_folders)
 
@@ -974,13 +1017,33 @@ def format_library_analysis(analysis: LibraryAnalysis) -> str:
         lines.append("No supported console folders were found.")
     for console in detected:
         item = analysis.consoles[console]
+        prefix = f"{item.source_folder_name} -> {console}" if item.source_folder_name != console else console
         lines.append(
-            f"{console}: {item.zipped_roms} zipped ROMs, "
+            f"{prefix}: {item.zipped_roms} zipped ROMs, "
             f"{item.extracted_roms} extracted ROMs, {item.local_images} local images"
         )
     if analysis.unsupported_folders:
         lines.append(f"Unsupported folders: {', '.join(analysis.unsupported_folders)}")
     return "\n".join(lines)
+
+
+def console_keys_for_analysis(analysis: LibraryAnalysis | None, show_all_supported: bool = False) -> list[str]:
+    """Return checkbox keys from backend-supported consoles, detected first."""
+    if not analysis:
+        return list(GUI_CONSOLES) if show_all_supported else []
+    detected = [console for console in GUI_CONSOLES if console in analysis.detected_consoles]
+    if not show_all_supported:
+        return detected
+    undetected = [console for console in GUI_CONSOLES if console not in detected]
+    return detected + undetected
+
+
+def console_checkbox_label(console: str, analysis: LibraryAnalysis | None) -> str:
+    if not analysis or console not in analysis.consoles:
+        return console
+    item = analysis.consoles[console]
+    source = f" from {item.source_folder_name}" if item.source_folder_name != console else ""
+    return f"{console}{source} - {item.zipped_roms} zipped, {item.extracted_roms} extracted, {item.local_images} images"
 
 
 def select_detected_console_keys(analysis: LibraryAnalysis) -> list[str]:

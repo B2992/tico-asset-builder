@@ -8,6 +8,7 @@ from pathlib import Path
 from .config import ARCHIVE_EXTENSIONS, CONSOLES, DISC_PRIMARY_EXTENSIONS, IMAGE_EXTENSIONS, IMAGE_FOLDER_NAMES
 from .models import ConsoleConfig, CoverCandidate, Game, SkippedFile
 from .names import normalized_stem, strip_compound_suffix
+from .system_aliases import resolve_console_folder_name
 
 
 def detect_rom_root(input_path: Path) -> Path:
@@ -19,7 +20,14 @@ def detect_rom_root(input_path: Path) -> Path:
 
 def find_console_dirs(input_path: Path) -> dict[str, Path]:
     rom_root = detect_rom_root(input_path)
-    return {key: rom_root / key for key in CONSOLES if (rom_root / key).is_dir()}
+    dirs: dict[str, Path] = {}
+    for child in sorted(rom_root.iterdir()) if rom_root.is_dir() else []:
+        if not child.is_dir() or child.name.startswith(".") or child.name.lower() in IMAGE_FOLDER_NAMES:
+            continue
+        match = resolve_console_folder_name(child.name)
+        if match and match.console not in dirs:
+            dirs[match.console] = child
+    return dirs
 
 
 def scan_games(input_path: Path) -> tuple[list[Game], list[SkippedFile]]:

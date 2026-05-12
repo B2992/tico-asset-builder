@@ -82,6 +82,24 @@ def test_combined_output_safety_checks() -> None:
     assert validate_combined_output_path(Path("/tmp/source"), Path("/tmp/source-tico-output")) is None
 
 
+def test_combined_workflow_alias_input_outputs_canonical_folder(tmp_path: Path) -> None:
+    source = tmp_path / "library"
+    output = tmp_path / "output"
+    _write_zip(source / "roms" / "SFC" / "ActRaiser.zip", {"ActRaiser.sfc": b"snes-rom"})
+    image_dir = source / "roms" / "SFC" / "images"
+    image_dir.mkdir(parents=True)
+    Image.new("RGB", (320, 240), (30, 60, 120)).save(image_dir / "ActRaiser.png")
+
+    result = build_tico_folder(source, output, style="fit")
+
+    assert result.assets is not None
+    assert (output / "tico" / "roms" / "snes" / "ActRaiser.sfc").exists()
+    assert not (output / "tico" / "roms" / "SFC").exists()
+    with Image.open(output / "tico" / "assets" / "covers" / "snes" / "ActRaiser.jpg") as cover:
+        assert cover.format == "JPEG"
+        assert cover.size == (512, 512)
+
+
 def _write_zip(path: Path, members: dict[str, bytes]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(path, "w") as archive:

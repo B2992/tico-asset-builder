@@ -7,8 +7,12 @@ from pathlib import Path
 
 def test_gui_module_imports() -> None:
     import tico_asset_builder.gui as gui
+    from tico_asset_builder.config import CONSOLES
 
-    assert gui.GUI_CONSOLES == ("gb", "gbc", "gba", "nes", "snes", "genesis", "psx")
+    assert gui.GUI_CONSOLES == tuple(CONSOLES)
+    assert "psp" in gui.GUI_CONSOLES
+    assert "dc" in gui.GUI_CONSOLES
+    assert "wii" in gui.GUI_CONSOLES
     assert gui.COVER_STYLES == ("fit", "crop", "stretch")
 
 
@@ -117,6 +121,7 @@ def test_analyze_library_counts_zipped_extracted_and_images(tmp_path: Path) -> N
     assert analysis.consoles["gb"].zipped_roms == 1
     assert analysis.consoles["gb"].extracted_roms == 1
     assert analysis.consoles["gb"].local_images == 1
+    assert analysis.consoles["gb"].source_folder_name == "gb"
 
 
 def test_analyze_library_counts_multiple_consoles_and_unsupported_folders(tmp_path: Path) -> None:
@@ -150,7 +155,59 @@ def test_select_detected_console_keys_uses_gui_supported_subset(tmp_path: Path) 
     analysis = analyze_library(tmp_path / "library")
 
     assert analysis.detected_consoles == ["gb", "wii"]
-    assert select_detected_console_keys(analysis) == ["gb"]
+    assert select_detected_console_keys(analysis) == ["gb", "wii"]
+
+
+def test_console_keys_for_analysis_detected_only_and_all_supported(tmp_path: Path) -> None:
+    from tico_asset_builder.gui import analyze_library, console_keys_for_analysis
+
+    roms = tmp_path / "library" / "roms"
+    (roms / "gb").mkdir(parents=True)
+    (roms / "gba").mkdir(parents=True)
+    (roms / "not-supported").mkdir(parents=True)
+    (roms / "gb" / "Tetris.zip").write_bytes(b"zip")
+    (roms / "gba" / "Advance Wars.gba").write_bytes(b"rom")
+
+    analysis = analyze_library(tmp_path / "library")
+
+    assert console_keys_for_analysis(analysis) == ["gb", "gba"]
+    all_keys = console_keys_for_analysis(analysis, show_all_supported=True)
+    assert all_keys[:2] == ["gb", "gba"]
+    assert "psp" in all_keys
+    assert "not-supported" not in all_keys
+    assert analysis.unsupported_folders == ["not-supported"]
+
+
+def test_console_checkbox_label_includes_counts(tmp_path: Path) -> None:
+    from tico_asset_builder.gui import analyze_library, console_checkbox_label
+
+    gb = tmp_path / "library" / "roms" / "gb"
+    images = gb / "images"
+    images.mkdir(parents=True)
+    (gb / "Tetris.zip").write_bytes(b"zip")
+    (gb / "Pokemon.gb").write_bytes(b"rom")
+    (images / "Tetris.png").write_bytes(b"image")
+
+    analysis = analyze_library(tmp_path / "library")
+
+    assert console_checkbox_label("gb", analysis) == "gb - 1 zipped, 1 extracted, 1 images"
+
+
+def test_analyze_library_reports_aliases_with_canonical_console(tmp_path: Path) -> None:
+    from tico_asset_builder.gui import analyze_library, console_checkbox_label, format_library_analysis
+
+    sfc = tmp_path / "library" / "roms" / "SFC"
+    sfc_images = sfc / "images"
+    sfc_images.mkdir(parents=True)
+    (sfc / "ActRaiser.zip").write_bytes(b"zip")
+    (sfc_images / "ActRaiser.png").write_bytes(b"image")
+
+    analysis = analyze_library(tmp_path / "library")
+
+    assert list(analysis.consoles) == ["snes"]
+    assert analysis.consoles["snes"].source_folder_name == "SFC"
+    assert "SFC -> snes" in format_library_analysis(analysis)
+    assert console_checkbox_label("snes", analysis).startswith("snes from SFC")
 
 
 def test_load_csv_report_with_rows(tmp_path: Path) -> None:

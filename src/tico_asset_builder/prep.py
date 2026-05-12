@@ -14,6 +14,7 @@ from shutil import copy2
 from zipfile import BadZipFile, ZipFile
 
 from .config import CONSOLES, IMAGE_EXTENSIONS
+from .system_aliases import resolve_console_folder_name
 
 @dataclass(frozen=True)
 class PreparedRom:
@@ -133,7 +134,14 @@ def _detect_rom_root(input_folder: Path) -> Path:
 
 
 def _console_dirs(rom_root: Path) -> dict[str, Path]:
-    return {console: rom_root / console for console in CONSOLES if (rom_root / console).is_dir()}
+    dirs: dict[str, Path] = {}
+    for child in sorted(rom_root.iterdir()) if rom_root.is_dir() else []:
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        match = resolve_console_folder_name(child.name)
+        if match and match.console not in dirs:
+            dirs[match.console] = child
+    return dirs
 
 
 def _zip_archives_by_console(rom_root: Path, selected_consoles: set[str]) -> dict[str, list[Path]]:

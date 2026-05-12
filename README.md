@@ -150,6 +150,8 @@ GUI tabs:
 
 The GUI has smart default output folders, safety checks, progress feedback, a cancel button, and a report viewer. Launching Tkinter apps from inside Codex may crash on macOS; use normal Terminal for the GUI.
 
+When you click **Analyze Library**, the GUI detects supported console folders from `SOURCE/roms/{console}/` or `SOURCE/{console}/` and builds the console checkbox list from the same backend console configuration used by the CLI. Detected systems are shown by default with counts for zipped ROMs, extracted ROMs, and local images. Unsupported folders are shown in the analysis summary but are not processed unless the backend supports them. Folder names should use supported system slugs such as `gb`, `gba`, `snes`, `psp`, `dc`, `saturn`, `wii`, `sega-cd`, `master-system`, `game-gear`, or `gc`.
+
 ## Input Folder Examples
 
 Tico-style source:
@@ -185,6 +187,30 @@ my-library/
 ```
 
 Common local artwork folder names include `images`, `imgs`, `covers`, `cover`, `boxart`, `box_art`, `box-art`, `media`, `thumbnails`, `thumbs`, `downloaded_images`, `artwork`, and `art`.
+
+## Supported Folder Aliases
+
+Canonical Tico/system slugs remain the output folder names, but input folders can use common aliases. For example:
+
+- `SFC`, `Super Nintendo`, `Super Famicom` -> `snes`
+- `Mega Drive`, `Sega Genesis` -> `genesis`
+- `PS1`, `PlayStation` -> `psx`
+- `GameCube`, `Game Cube`, `GCN` -> `gc`
+- `Game Boy`, `GameBoy`, `DMG` -> `gb`
+- `Game Boy Color` -> `gbc`
+- `Game Boy Advance` -> `gba`
+- `Dreamcast` -> `dc`
+- `Sega CD`, `Mega CD` -> `sega-cd`
+- `Master System` -> `master-system`
+- `Game Gear` -> `game-gear`
+- `PlayStation Portable` -> `psp`
+- `Nintendo Wii` -> `wii`
+
+The app normalizes spaces, underscores, dots, hyphens, brackets, and generic words such as `roms`, `games`, `no-intro`, and `redump` before matching folder names. Exact aliases are preferred. Conservative fuzzy matching is used only for longer, high-confidence, unambiguous names; short names such as `gb`, `gg`, `dc`, `md`, `fc`, `gc`, and `sms` are never guessed fuzzily.
+
+Output always uses canonical folders. For example, `roms/SFC/ActRaiser.zip` outputs to `tico/roms/snes/ActRaiser.sfc` and `tico/assets/covers/snes/ActRaiser.jpg`.
+
+Unsupported folders are reported but not processed. More aliases can be requested through issues or pull requests.
 
 ## Cover Styles
 

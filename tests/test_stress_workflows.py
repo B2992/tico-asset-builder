@@ -234,7 +234,7 @@ def test_detected_console_selection_helper_uses_gui_supported_subset(tmp_path: P
 
     assert "gb" in analysis.detected_consoles
     assert "wii" in analysis.detected_consoles
-    assert select_detected_console_keys(analysis) == ["gb"]
+    assert select_detected_console_keys(analysis) == ["gb", "wii"]
 
 
 def _write_zip(path: Path, members: dict[str, bytes]) -> None:
