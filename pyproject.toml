@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tico-asset-builder"
+version = "0.1.0"
+description = "Build Tico-compatible cover asset folders from local ROM libraries."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Tico Asset Builder Contributors" }]
+dependencies = [
+  "Pillow>=10.0",
+  "RapidFuzz>=3.0",
+]
+
+[project.scripts]
+tico-asset-builder = "tico_asset_builder.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
