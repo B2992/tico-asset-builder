@@ -32,9 +32,8 @@ def test_gui_dry_run_summary_is_explicit() -> None:
 
     assert "Dry run complete." in lines
     assert "No ROMs were extracted." in lines
-    assert "No artwork was copied." in lines
     assert "No output folder was created." in lines
-    assert "Original ROM library was left untouched." in lines
+    assert "Original library was left untouched." in lines
 
 
 def test_gui_suggests_prepared_output_folder() -> None:

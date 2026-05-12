@@ -14,6 +14,14 @@ my-library-tico-output/
 
 The tool can run from the command line or from a simple Tkinter desktop GUI.
 
+**Most users should use the combined workflow:**
+
+```bash
+tico-build-tico-folder my-library --output my-library-tico-output --style fit
+```
+
+In the GUI, most users should start with **Build Complete Tico Folder**.
+
 ## Safety Promise
 
 Tico Asset Builder treats your original ROM library as read-only.
@@ -97,9 +105,24 @@ my-library-tico-output/
 
 This is the easiest path for normal users. It prepares ROMs into `tico/roms/`, builds resized covers into `tico/assets/covers/`, and leaves the original library untouched.
 
+## What Do I Click First?
+
+In the GUI, start with **Build Complete Tico Folder**.
+
+1. Choose your ROM library.
+2. Click **Analyze Library** if you want to review detected systems.
+3. Choose a final Tico folder to copy/use.
+4. Click **Build Complete Tico Folder**.
+5. Copy the generated `tico/` folder to your SD card or Tico setup.
+
+The advanced tabs are optional:
+
+- **Advanced: Extract ROMs Only** creates extracted ROM files only.
+- **Advanced: Build Covers Only** creates resized cover assets only.
+
 ## Advanced Separate Workflows
 
-### ROM-only prep
+### Extract ROMs Only
 
 ```bash
 tico-prepare-roms my-library --output my-library-tico-prepared
@@ -115,7 +138,7 @@ my-library-tico-prepared/
 
 Prepared ROM output contains ROMs only. It does not copy `images/`, `imgs/`, `covers/`, `boxart/`, or other source artwork folders.
 
-### Cover-assets-only build
+### Build Covers Only
 
 ```bash
 tico-asset-builder my-prepared-roms --artwork-source my-original-library --output my-cover-assets --style fit
@@ -142,9 +165,9 @@ tico-asset-builder-gui
 
 GUI tabs:
 
-- **Prepare ROMs**: create ROM-only prepared folders.
-- **Build Cover Assets**: create resized Tico cover assets, optionally using an artwork source folder.
-- **Combined Tico Folder**: create one clean final Tico folder with ROMs and covers.
+- **Build Complete Tico Folder**: recommended; create one clean final Tico folder with ROMs and covers.
+- **Advanced: Extract ROMs Only**: create ROM-only prepared folders.
+- **Advanced: Build Covers Only**: create resized Tico cover assets, optionally using an artwork source folder.
 - **Reports**: view CSV reports and save a summary.
 - **Log / Status**: watch progress, review messages, and request cancellation.
 
@@ -190,7 +213,7 @@ Common local artwork folder names include `images`, `imgs`, `covers`, `cover`, `
 
 ## Supported Folder Aliases
 
-Canonical Tico/system slugs remain the output folder names, but input folders can use common aliases. For example:
+Output always uses Tico's standard folder names, but input folders can use common aliases. For example:
 
 - `SFC`, `Super Nintendo`, `Super Famicom` -> `snes`
 - `Mega Drive`, `Sega Genesis` -> `genesis`
@@ -208,7 +231,7 @@ Canonical Tico/system slugs remain the output folder names, but input folders ca
 
 The app normalizes spaces, underscores, dots, hyphens, brackets, and generic words such as `roms`, `games`, `no-intro`, and `redump` before matching folder names. Exact aliases are preferred. Conservative fuzzy matching is used only for longer, high-confidence, unambiguous names; short names such as `gb`, `gg`, `dc`, `md`, `fc`, `gc`, and `sms` are never guessed fuzzily.
 
-Output always uses canonical folders. For example, `roms/SFC/ActRaiser.zip` outputs to `tico/roms/snes/ActRaiser.sfc` and `tico/assets/covers/snes/ActRaiser.jpg`.
+For example, an input folder named `SFC` is detected as SNES, but the output folder is `tico/roms/snes` because `snes` is Tico's standard folder name.
 
 Unsupported folders are reported but not processed. More aliases can be requested through issues or pull requests.
 
@@ -240,6 +263,8 @@ Asset reports are written to `OUTPUT/reports/`.
 - `missing-covers.csv`: ROMs that need artwork fixes.
 - `skipped-files.csv`: unsupported files ignored by the scanner.
 - `summary.txt`: optional GUI-generated summary of report counts.
+
+Start with `missing-covers.csv`. If Missing Covers is empty, your cover matching is complete.
 
 ## Troubleshooting
 
@@ -291,7 +316,7 @@ tico-asset-builder-gui
 
 ### The GUI window is too tall or cramped
 
-The GUI uses tabs to fit smaller screens. If it still feels cramped, resize the window and use the **Build Cover Assets**, **Reports**, and **Log / Status** tabs separately.
+The GUI uses tabs to fit smaller screens. If it still feels cramped, resize the window and use the **Advanced: Build Covers Only**, **Reports**, and **Log / Status** tabs separately.
 
 ### Output folder already exists
 

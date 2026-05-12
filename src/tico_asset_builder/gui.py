@@ -21,12 +21,12 @@ from .system_aliases import ConsoleFolderMatch, resolve_console_folder_name
 GUI_CONSOLES = tuple(CONSOLES)
 COVER_STYLES = ("fit", "crop", "stretch")
 REPORT_DEFINITIONS = {
-    "prepared_roms": ("Prepared ROMs", "prepared-roms.csv", "No prepared ROMs found."),
-    "skipped_archives": ("Skipped Archives", "skipped-archives.csv", "No skipped archive items found."),
-    "detected_games": ("Detected Games", "detected-games.csv", "No detected games found."),
-    "matched_covers": ("Matched Covers", "matched-covers.csv", "No matched covers found."),
+    "prepared_roms": ("Extracted ROMs", "prepared-roms.csv", "No extracted ROMs found."),
+    "skipped_archives": ("Skipped Zip Contents", "skipped-archives.csv", "No skipped zip contents found."),
+    "detected_games": ("Detected ROMs", "detected-games.csv", "No detected ROMs found."),
+    "matched_covers": ("Covers Found", "matched-covers.csv", "No matched covers found."),
     "missing_covers": ("Missing Covers", "missing-covers.csv", "No missing covers found."),
-    "skipped_files": ("Skipped Files", "skipped-files.csv", "No skipped files found."),
+    "skipped_files": ("Ignored Files", "skipped-files.csv", "No ignored files found."),
 }
 
 
@@ -119,14 +119,14 @@ class TicoAssetBuilderGui:
         self.main_notebook = ttk.Notebook(container)
         self.main_notebook.grid(row=0, column=0, sticky="nsew")
 
+        combined_tab = ttk.Frame(self.main_notebook, padding=10)
         prepare_tab = ttk.Frame(self.main_notebook, padding=10)
         build_tab = ttk.Frame(self.main_notebook, padding=10)
-        combined_tab = ttk.Frame(self.main_notebook, padding=10)
         reports_tab = ttk.Frame(self.main_notebook, padding=10)
         log_tab = ttk.Frame(self.main_notebook, padding=10)
-        self.main_notebook.add(prepare_tab, text="Prepare ROMs")
-        self.main_notebook.add(build_tab, text="Build Cover Assets")
-        self.main_notebook.add(combined_tab, text="Combined Tico Folder")
+        self.main_notebook.add(combined_tab, text="Build Complete Tico Folder")
+        self.main_notebook.add(prepare_tab, text="Advanced: Extract ROMs Only")
+        self.main_notebook.add(build_tab, text="Advanced: Build Covers Only")
         self.main_notebook.add(reports_tab, text="Reports")
         self.main_notebook.add(log_tab, text="Log / Status")
 
@@ -154,20 +154,20 @@ class TicoAssetBuilderGui:
         self.analyze_button = ttk.Button(source_frame, text="Analyze Library", command=self.analyze_source_library)
         self.analyze_button.grid(row=2, column=0, sticky="w", padx=8, pady=(0, 8))
 
-        prepare_frame = ttk.LabelFrame(prepare_tab, text="Prepare ROMs")
+        prepare_frame = ttk.LabelFrame(prepare_tab, text="Advanced: Extract ROMs Only")
         prepare_frame.grid(row=1, column=0, sticky="nsew")
         prepare_frame.columnconfigure(1, weight=1)
         prepare_frame.rowconfigure(6, weight=1)
         self._folder_row(
             prepare_frame,
             0,
-            "Prepared output folder (separate extracted copy for Tico)",
+            "Prepared ROMs-only output folder",
             self.prepared_output,
             "Choose Output",
         )
         ttk.Label(
             prepare_frame,
-            text="This creates extracted ROM files only. Cover art is not copied into the prepared ROM folder.",
+            text="Advanced workflow: this extracts ROMs into a separate folder only. It does not create cover assets.",
         ).grid(row=1, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
         ttk.Label(
             prepare_frame,
@@ -179,7 +179,7 @@ class TicoAssetBuilderGui:
             row=3, column=0, columnspan=3, sticky="w", padx=8, pady=4
         )
 
-        console_frame = ttk.LabelFrame(prepare_frame, text="Console Filters")
+        console_frame = ttk.LabelFrame(prepare_frame, text="Systems to Process")
         console_frame.grid(row=4, column=0, columnspan=3, sticky="ew", padx=8, pady=4)
         console_frame.columnconfigure(0, weight=1)
         ttk.Label(
@@ -213,7 +213,7 @@ class TicoAssetBuilderGui:
         action_frame.grid(row=7, column=0, columnspan=3, sticky="w", padx=8, pady=(6, 8))
         self.dry_run_button = ttk.Button(action_frame, text="Dry Run", command=self.dry_run_roms)
         self.dry_run_button.grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.prepare_button = ttk.Button(action_frame, text="Prepare ROMs", command=self.prepare_roms)
+        self.prepare_button = ttk.Button(action_frame, text="Extract ROMs Only", command=self.prepare_roms)
         self.prepare_button.grid(row=0, column=1, sticky="w", padx=8)
         ttk.Button(
             action_frame,
@@ -226,7 +226,7 @@ class TicoAssetBuilderGui:
             command=lambda: self._open_folder(Path(self.prepared_output.get()) / "reports", "prep reports folder"),
         ).grid(row=0, column=3, sticky="w", padx=8)
 
-        build_frame = ttk.LabelFrame(build_tab, text="Build Cover Assets")
+        build_frame = ttk.LabelFrame(build_tab, text="Advanced: Build Covers Only")
         build_frame.grid(row=0, column=0, sticky="ew")
         build_frame.columnconfigure(1, weight=1)
         self._folder_row(
@@ -240,20 +240,20 @@ class TicoAssetBuilderGui:
         self._folder_row(
             build_frame,
             1,
-            "Asset output folder (separate Tico cover assets folder)",
+            "Covers-only output folder",
             self.asset_output,
             "Choose Output",
         )
         self._folder_row(
             build_frame,
             2,
-            "Optional artwork source folder",
+            "Original artwork/source folder, optional",
             self.artwork_source,
             "Choose Artwork",
         )
         ttk.Label(
             build_frame,
-            text="This writes resized Tico covers only. Use artwork source when images are still in the original library.",
+            text="Advanced workflow: this creates resized Tico cover assets only. It does not extract or copy ROMs.",
         ).grid(row=3, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
 
         style_frame = ttk.Frame(build_frame)
@@ -266,7 +266,7 @@ class TicoAssetBuilderGui:
 
         build_actions = ttk.Frame(build_frame)
         build_actions.grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(6, 8))
-        self.build_button = ttk.Button(build_actions, text="Build Tico Assets", command=self.build_assets)
+        self.build_button = ttk.Button(build_actions, text="Build Covers Only", command=self.build_assets)
         self.build_button.grid(row=0, column=0, sticky="w", padx=(0, 8))
         ttk.Button(
             build_actions,
@@ -279,12 +279,25 @@ class TicoAssetBuilderGui:
             command=lambda: self._open_folder(Path(self.asset_output.get()) / "reports", "asset reports folder"),
         ).grid(row=0, column=2, sticky="w", padx=8)
 
-        combined_frame = ttk.LabelFrame(combined_tab, text="Build Combined Tico Folder")
+        combined_frame = ttk.LabelFrame(combined_tab, text="Build Complete Tico Folder")
         combined_frame.grid(row=0, column=0, sticky="ew")
         combined_frame.columnconfigure(1, weight=1)
+        ttk.Label(
+            combined_frame,
+            text=(
+                "New here? Use this tab. 1. Choose your ROM library  2. Click Analyze Library  "
+                "3. Choose a final output folder  4. Click Build Complete Tico Folder  "
+                "5. Copy the generated tico folder to your SD card or Tico setup."
+            ),
+            wraplength=840,
+        ).grid(row=0, column=0, columnspan=3, sticky="w", padx=8, pady=(6, 4))
+        ttk.Label(
+            combined_frame,
+            text="This creates both tico/roms/ and tico/assets/covers/. Your original ROM library is left untouched.",
+        ).grid(row=1, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 8))
         self._folder_row(
             combined_frame,
-            0,
+            2,
             "Source library folder (read-only / untouched)",
             self.source_library,
             "Choose Source",
@@ -292,22 +305,22 @@ class TicoAssetBuilderGui:
         )
         self._folder_row(
             combined_frame,
-            1,
-            "Final Tico output folder",
+            3,
+            "Final Tico folder to copy/use",
             self.final_output,
             "Choose Output",
         )
         ttk.Label(
             combined_frame,
-            text="Creates one clean folder with tico/roms and resized covers in tico/assets/covers.",
-        ).grid(row=2, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
+            text="Creates: FINAL_OUTPUT/tico/roms/ and FINAL_OUTPUT/tico/assets/covers/.",
+        ).grid(row=4, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
         ttk.Label(
             combined_frame,
             text="The original source library is left untouched. Source artwork folders are not copied into tico/roms.",
-        ).grid(row=3, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
+        ).grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 4))
 
         combined_style_frame = ttk.Frame(combined_frame)
-        combined_style_frame.grid(row=4, column=0, columnspan=3, sticky="w", padx=8, pady=4)
+        combined_style_frame.grid(row=6, column=0, columnspan=3, sticky="w", padx=8, pady=4)
         ttk.Label(combined_style_frame, text="Cover style:").grid(row=0, column=0, sticky="w", padx=(0, 8))
         for index, style in enumerate(COVER_STYLES, start=1):
             ttk.Radiobutton(combined_style_frame, text=style, variable=self.combined_style, value=style).grid(
@@ -316,14 +329,14 @@ class TicoAssetBuilderGui:
 
         ttk.Label(
             combined_frame,
-            text="Console filters use the checkboxes on the Prepare ROMs tab. Use Analyze Library and Select Detected Only there first if desired.",
-        ).grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=4)
+            text="Optional: use Analyze Library on the Extract ROMs Only tab to choose specific systems. If you leave filters alone, all detected systems are processed.",
+        ).grid(row=7, column=0, columnspan=3, sticky="w", padx=8, pady=4)
 
         combined_actions = ttk.Frame(combined_frame)
-        combined_actions.grid(row=6, column=0, columnspan=3, sticky="w", padx=8, pady=(6, 8))
+        combined_actions.grid(row=8, column=0, columnspan=3, sticky="w", padx=8, pady=(6, 8))
         self.combined_button = ttk.Button(
             combined_actions,
-            text="Build Combined Tico Folder",
+            text="Build Complete Tico Folder",
             command=self.build_combined_tico_folder,
         )
         self.combined_button.grid(row=0, column=0, sticky="w", padx=(0, 8))
@@ -380,6 +393,10 @@ class TicoAssetBuilderGui:
 
         self.report_notebook = ttk.Notebook(reports_frame)
         self.report_notebook.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
+        ttk.Label(
+            reports_frame,
+            text="Start with Missing Covers. If Missing Covers is empty, your cover matching is complete.",
+        ).grid(row=2, column=0, sticky="w", padx=8, pady=(0, 8))
         for key, (title, _filename, _empty_message) in REPORT_DEFINITIONS.items():
             tab = ttk.Frame(self.report_notebook)
             tab.columnconfigure(0, weight=1)
@@ -402,6 +419,10 @@ class TicoAssetBuilderGui:
         self.log = ScrolledText(log_frame, height=12, wrap="word")
         self.log.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
         self._log("Ready. The source library is treated as read-only and left untouched.")
+        ttk.Label(
+            container,
+            text="Safety: your source library is read-only. Outputs are written only to the folders you choose.",
+        ).grid(row=1, column=0, sticky="w", pady=(8, 0))
 
     def _folder_row(
         self,
@@ -567,7 +588,7 @@ class TicoAssetBuilderGui:
         consoles = [console for console, variable in self.console_vars.items() if variable.get()]
         dry_run = self.dry_run.get() if force_dry_run is None else force_dry_run
         label = "Dry Run" if dry_run else "Preparing ROMs"
-        self._log_separator("Prepare ROMs" if not dry_run else "Dry Run")
+        self._log_separator("Extract ROMs Only" if not dry_run else "Dry Run")
         self._set_status("Preparing" if not dry_run else "Analyzing")
         self._set_progress(0, 1, "Starting ROM prep...")
         self._run_in_background(
@@ -582,7 +603,7 @@ class TicoAssetBuilderGui:
         if consoles:
             self._log(f"Console filter: {', '.join(consoles)}")
         if dry_run:
-            self._log("Dry run enabled: no ROMs or artwork will be written.")
+            self._log("Dry run enabled: no ROMs will be extracted and no output folder will be created.")
 
         result = prepare_roms(
             source,
@@ -617,11 +638,11 @@ class TicoAssetBuilderGui:
             self._warn("Choose an artwork source folder that exists, or leave it blank.")
             return
 
-        self._log_separator("Build Cover Assets")
+        self._log_separator("Build Covers Only")
         self._set_status("Building")
         self._set_progress(0, 1, "Starting cover build...")
         self._run_in_background(
-            "Building Tico assets",
+            "Building covers only",
             lambda: self._build_assets_task(Path(prepared), Path(output), self.cover_style.get()),
         )
 
@@ -671,11 +692,11 @@ class TicoAssetBuilderGui:
             return
 
         consoles = [console for console, variable in self.console_vars.items() if variable.get()]
-        self._log_separator("Build Combined Tico Folder")
+        self._log_separator("Build Complete Tico Folder")
         self._set_status("Building")
         self._set_progress(0, 1, "Starting combined Tico folder build...")
         self._run_in_background(
-            "Building combined Tico folder",
+            "Building complete Tico folder",
             lambda: self._build_combined_tico_folder_task(
                 Path(source),
                 Path(output),
@@ -685,7 +706,7 @@ class TicoAssetBuilderGui:
         )
 
     def _build_combined_tico_folder_task(self, source: Path, output: Path, style: str, consoles: list[str]) -> None:
-        self._log("Starting combined Tico folder build.")
+        self._log("Starting complete Tico folder build.")
         self._log(f"Source library, read-only: {source}")
         self._log(f"Final Tico output folder: {output}")
         self._log(f"Cover style: {style}")
@@ -722,7 +743,7 @@ class TicoAssetBuilderGui:
         if result.cancelled:
             self._log("Cancelled. Partial output may exist. Original ROM library was left untouched.")
         else:
-            self._log("Combined Tico folder build complete. Original ROM library was left untouched.")
+            self._log("Complete Tico folder build finished. Original ROM library was left untouched.")
         self._set_status("Cancelled" if result.cancelled else "Done")
 
     def _run_in_background(self, label: str, task) -> None:
@@ -897,8 +918,8 @@ def format_prepare_summary(result: PrepResult, dry_run: bool) -> list[str]:
             [
                 "Dry run complete.",
                 "No ROMs were extracted.",
-                "No artwork was copied.",
                 "No output folder was created.",
+                "Original library was left untouched.",
                 f"ROMs that would be extracted: {len(result.prepared)}",
             ]
         )
@@ -914,7 +935,8 @@ def format_prepare_summary(result: PrepResult, dry_run: bool) -> list[str]:
         action = "would be extracted" if dry_run else "extracted"
         lines.append(f"{console}: {count} {action}")
     lines.append(f"Skipped archive items: {len(result.skipped)}")
-    lines.append("Original ROM library was left untouched.")
+    if not dry_run:
+        lines.append("Original ROM library was left untouched.")
     return lines
 
 
