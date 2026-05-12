@@ -1,7 +1,44 @@
 .venv/
+.venv-broken*/
 __pycache__/
 .pycache/
 .pytest_cache/
+.DS_Store
 *.egg-info/
 output/
+build/
+dist/
 
+# Local sample and generated output folders
+sample_library/
+sample_output/
+real_test_output/
+prepared_real_test_library/
+prepared_real_test_output/
+prepared_cli_test_library/
+prepared_cli_test_output/
+prepared-dry-run/
+prepared-gb/
+prepared-gb-gba/
+prepared-full-test/
+assets-gb/
+assets-gb-gba/
+assets-full-test/
+gui-dry-run-test/
+gui-prepared-gb/
+gui-assets-gb/
+
+# Local ROM libraries and generated prep/build outputs
+real_test_library/
+real_test_library-tico-output-test/
+prepared*/
+prepared_*/
+assets*/
+assets-*/
+gui*/
+gui-*/
+*-tico-prepared/
+*-tico-assets/
+*-tico-output/
+reports/
+*_output/

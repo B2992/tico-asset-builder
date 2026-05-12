@@ -1,3 +1,5 @@
+"""Local scanners for ROM files, skipped files, and artwork candidates."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -21,6 +23,7 @@ def find_console_dirs(input_path: Path) -> dict[str, Path]:
 
 
 def scan_games(input_path: Path) -> tuple[list[Game], list[SkippedFile]]:
+    """Detect supported ROM files while reporting unsupported local files."""
     games: list[Game] = []
     skipped: list[SkippedFile] = []
 
@@ -51,6 +54,7 @@ def scan_games(input_path: Path) -> tuple[list[Game], list[SkippedFile]]:
 
 
 def scan_cover_candidates(input_path: Path) -> dict[str, list[CoverCandidate]]:
+    """Find local artwork near console folders and common image roots."""
     rom_root = detect_rom_root(input_path)
     candidates: dict[str, list[CoverCandidate]] = {console: [] for console in CONSOLES}
 

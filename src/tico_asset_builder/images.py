@@ -1,3 +1,5 @@
+"""Image conversion helpers for Tico cover output."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,6 +11,7 @@ VALID_STYLES = ("fit", "crop", "stretch")
 
 
 def convert_cover(source: Path, destination: Path, style: str, size: int = 512) -> None:
+    """Convert one local artwork file into a 512x512 JPG cover."""
     if style not in VALID_STYLES:
         raise ValueError(f"Unsupported cover style: {style}")
 
@@ -25,10 +28,10 @@ def convert_cover(source: Path, destination: Path, style: str, size: int = 512) 
 
 
 def _fit_with_padding(image: Image.Image, size: int) -> Image.Image:
+    """Preserve the full image and pad to Tico's square cover size."""
     fitted = ImageOps.contain(image, (size, size), method=Image.Resampling.LANCZOS)
     canvas = Image.new("RGB", (size, size), (0, 0, 0))
     x = (size - fitted.width) // 2
     y = (size - fitted.height) // 2
     canvas.paste(fitted, (x, y))
     return canvas
-

@@ -18,6 +18,9 @@ IMAGE_FOLDER_NAMES = frozenset(
         "boxart",
         "box-art",
         "box_art",
+        "downloaded_images",
+        "artwork",
+        "art",
     }
 )
 
@@ -40,4 +43,3 @@ CONSOLES: dict[str, ConsoleConfig] = {
     "gc": ConsoleConfig("gc", frozenset({".iso", ".gcm", ".rvz", ".nkit.iso"}), True),
     "wii": ConsoleConfig("wii", frozenset({".iso", ".wbfs", ".rvz", ".nkit.iso"}), True),
 }
-

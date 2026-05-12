@@ -1,95 +1,324 @@
 # Tico Asset Builder
 
-Tico Asset Builder is a command-line utility that scans a Tico folder or a ROM library folder and creates a Tico-compatible cover asset folder.
+Tico Asset Builder is a local-first utility that helps you create a Tico-compatible folder from an existing ROM library and existing local artwork.
 
-It only uses local files. Online scraping and GUI features are intentionally out of scope for the MVP.
+Recommended output:
 
-## Requirements
+```text
+my-library-tico-output/
+  tico/
+    roms/{console}/Game.ext
+    assets/covers/{console}/Game.jpg
+  reports/
+```
 
-- Python 3.11+
-- Pillow
-- RapidFuzz
+The tool can run from the command line or from a simple Tkinter desktop GUI.
 
-## Install for local development
+## Safety Promise
+
+Tico Asset Builder treats your original ROM library as read-only.
+
+- It does not rename, delete, move, or overwrite files in the source library.
+- It writes prepared ROMs, resized cover assets, and reports only to output folders you choose.
+- It refuses some dangerous output locations, such as writing directly into `source/roms`.
+- Dry runs inspect what would happen without extracting ROMs or creating prepared output folders.
+
+## No ROMs Or Copyrighted Artwork
+
+This repository should not contain ROMs, BIOS files, copyrighted cover art, copied ROM libraries, generated reports, or generated output folders.
+
+Tests use fake placeholder ROM files and generated Pillow images only.
+
+## What It Does
+
+- Prepares zipped ROM libraries into extracted ROM-only folders.
+- Finds existing local artwork on your machine.
+- Converts matched artwork to `512x512` JPG covers.
+- Creates Tico-compatible `tico/roms/` and `tico/assets/covers/` folders.
+- Writes CSV reports so you can review what happened.
+- Provides a beginner-friendly GUI for the same local workflows.
+
+## What It Does Not Do
+
+- No scraping.
+- No online artwork lookup.
+- No ROM downloads.
+- No BIOS handling.
+- No source-library modification.
+- No copied source artwork inside `tico/roms/{console}/images/`.
+
+## Installation For Normal Users
+
+From this project folder:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e .
+python -m pip install --upgrade pip
+python -m pip install .
 ```
 
-## Example Commands
-
-Scan a Tico folder that contains `roms/{console}/`:
+If you are offline and dependencies are already installed in `.venv`, this local fallback can help:
 
 ```bash
-tico-asset-builder /path/to/tico-folder --output /path/to/output
+python -m pip install --no-build-isolation --no-deps .
 ```
 
-Scan a ROM library folder where console folders are directly inside the input folder:
+## Recommended Simple Workflow
+
+Build one clean Tico-compatible folder:
 
 ```bash
-tico-asset-builder /path/to/rom-library --output /path/to/output
+source .venv/bin/activate
+tico-build-tico-folder my-library --output my-library-tico-output --style fit
 ```
 
-Use a different cover style:
-
-```bash
-tico-asset-builder /path/to/library --style crop
-tico-asset-builder /path/to/library --style stretch
-```
-
-Adjust fuzzy matching strictness:
-
-```bash
-tico-asset-builder /path/to/library --match-threshold 82
-```
-
-Preview what would be created without writing images:
-
-```bash
-tico-asset-builder /path/to/library --dry-run
-```
-
-## Output
-
-Covers are exported to:
+Result:
 
 ```text
-output/tico/assets/covers/{console}/{rom_stem}.jpg
+my-library-tico-output/
+  tico/
+    roms/
+      gb/
+        Tetris.gb
+    assets/
+      covers/
+        gb/
+          Tetris.jpg
+    reports/
+      prepared-roms.csv
+      skipped-archives.csv
+  reports/
+    detected-games.csv
+    matched-covers.csv
+    missing-covers.csv
+    skipped-files.csv
 ```
 
-Reports are written to:
+This is the easiest path for normal users. It prepares ROMs into `tico/roms/`, builds resized covers into `tico/assets/covers/`, and leaves the original library untouched.
+
+## Advanced Separate Workflows
+
+### ROM-only prep
+
+```bash
+tico-prepare-roms my-library --output my-library-tico-prepared
+```
+
+Creates:
 
 ```text
-output/reports/detected-games.csv
-output/reports/matched-covers.csv
-output/reports/missing-covers.csv
-output/reports/skipped-files.csv
+my-library-tico-prepared/
+  roms/{console}/Game.ext
+  reports/
 ```
 
-## Supported Consoles
+Prepared ROM output contains ROMs only. It does not copy `images/`, `imgs/`, `covers/`, `boxart/`, or other source artwork folders.
 
-The MVP detects:
+### Cover-assets-only build
 
-`gb`, `gbc`, `gba`, `nes`, `snes`, `genesis`, `master-system`, `game-gear`, `sega-cd`, `saturn`, `dc`, `psx`, `psp`, `gc`, `wii`
+```bash
+tico-asset-builder my-prepared-roms --artwork-source my-original-library --output my-cover-assets --style fit
+```
 
-Input can be either:
+Creates:
 
-- A Tico folder containing `roms/{console}/`
-- A ROM library folder containing console folders directly
+```text
+my-cover-assets/
+  tico/assets/covers/{console}/Game.jpg
+  reports/
+```
 
-## Local Image Discovery
+Use `--artwork-source` when ROMs are in one folder and artwork is still in the original library. If artwork is already near the ROM input folder, `--artwork-source` is optional.
 
-The scanner looks for images in likely folders such as:
+## GUI Usage
 
-`imgs`, `images`, `thumbnails`, `media`, `covers`, `boxart`
+Launch the GUI from normal Terminal on macOS:
 
-Images are matched to ROM filenames using exact normalized names first, then RapidFuzz fuzzy matching.
+```bash
+source .venv/bin/activate
+tico-asset-builder-gui
+```
 
-## Notes
+GUI tabs:
 
-- Compressed archives such as `.zip` and `.7z` are skipped.
-- For disc systems, `.bin` track files are not treated as separate games when nearby `.cue`, `.chd`, `.iso`, or `.m3u` files indicate the disc game already exists.
-- Default cover style is `fit`, which preserves aspect ratio and pads to 512x512.
+- **Prepare ROMs**: create ROM-only prepared folders.
+- **Build Cover Assets**: create resized Tico cover assets, optionally using an artwork source folder.
+- **Combined Tico Folder**: create one clean final Tico folder with ROMs and covers.
+- **Reports**: view CSV reports and save a summary.
+- **Log / Status**: watch progress, review messages, and request cancellation.
 
+The GUI has smart default output folders, safety checks, progress feedback, a cancel button, and a report viewer. Launching Tkinter apps from inside Codex may crash on macOS; use normal Terminal for the GUI.
+
+## Input Folder Examples
+
+Tico-style source:
+
+```text
+my-library/
+  roms/
+    gb/
+      Tetris.zip
+      images/
+        Tetris.png
+```
+
+Already-extracted source:
+
+```text
+my-library/
+  roms/
+    gb/
+      Tetris.gb
+      images/
+        Tetris.png
+```
+
+Plain console-folder source:
+
+```text
+my-library/
+  gb/
+    Tetris.gb
+    images/
+      Tetris.png
+```
+
+Common local artwork folder names include `images`, `imgs`, `covers`, `cover`, `boxart`, `box_art`, `box-art`, `media`, `thumbnails`, `thumbs`, `downloaded_images`, `artwork`, and `art`.
+
+## Cover Styles
+
+All final covers are saved as `512x512` JPG files.
+
+- `fit`: preserves the full image and adds black padding if needed.
+- `crop`: fills the square by trimming edges.
+- `stretch`: resizes directly to a square, which may distort the image.
+
+Default:
+
+```bash
+--style fit
+```
+
+## Reports
+
+Prep reports are written to `OUTPUT/tico/reports/` for combined output, or `PREPARED_OUTPUT/reports/` for ROM-only prep.
+
+- `prepared-roms.csv`: zip archives or extracted source ROMs that were prepared into the output.
+- `skipped-archives.csv`: archive contents skipped during ROM prep, including junk files or invalid zips.
+
+Asset reports are written to `OUTPUT/reports/`.
+
+- `detected-games.csv`: ROMs found by the asset builder.
+- `matched-covers.csv`: ROMs that matched local artwork, including source artwork path and output cover path.
+- `missing-covers.csv`: ROMs that need artwork fixes.
+- `skipped-files.csv`: unsupported files ignored by the scanner.
+- `summary.txt`: optional GUI-generated summary of report counts.
+
+## Troubleshooting
+
+### 0 games detected
+
+Check that your ROMs are under `roms/{console}/` or `{console}/`, and that the console folder name is supported.
+
+### My ROMs are .zip files
+
+Use the combined workflow or ROM prep command. The asset builder does not treat `.zip` files as playable games.
+
+```bash
+tico-build-tico-folder my-library --output my-library-tico-output --style fit
+```
+
+### Images in prepared ROM folders are not resized
+
+Prepared ROM folders intentionally contain ROMs only. Source artwork is not copied there.
+
+### Where are the final resized covers?
+
+Look in:
+
+```text
+OUTPUT/tico/assets/covers/{console}/
+```
+
+### Missing covers report is not empty
+
+Open `missing-covers.csv`. Add or rename local artwork in your source library, then run the builder again. The project intentionally uses local artwork only.
+
+### GUI does not show newest changes
+
+Refresh the install:
+
+```bash
+source .venv/bin/activate
+python -m pip install --no-build-isolation --no-deps .
+```
+
+### macOS/Tkinter GUI crashed when launched from Codex
+
+Launch from normal Terminal instead:
+
+```bash
+source .venv/bin/activate
+tico-asset-builder-gui
+```
+
+### The GUI window is too tall or cramped
+
+The GUI uses tabs to fit smaller screens. If it still feels cramped, resize the window and use the **Build Cover Assets**, **Reports**, and **Log / Status** tabs separately.
+
+### Output folder already exists
+
+Some commands refuse to write into a non-empty output folder unless `--overwrite` is provided. Choose an empty output folder when possible.
+
+### Why no images folder appears inside tico/roms/
+
+That is expected. `tico/roms/` contains ROM files only. Final resized covers are in `tico/assets/covers/`.
+
+## Installation For Developers
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e . pytest
+```
+
+Run tests:
+
+```bash
+python -m pytest
+python -m pytest tests/test_stress_workflows.py
+```
+
+The stress tests use fake ROM placeholder files and generated artwork only.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor guidelines.
+
+## Known Limitations
+
+- `.zip` prep is supported; `.7z` and `.rar` extraction are not supported yet.
+- Artwork matching is local-only.
+- No scraping or online lookup.
+- GUI uses Tkinter.
+- Output is designed around current Tico folder assumptions.
+- Disc and multi-disc systems may need more real-world testing.
+
+## Contributing
+
+Issues and pull requests are welcome. Please do not upload ROMs, BIOS files, copyrighted artwork, generated output folders, or private folder listings.
+
+Before opening a pull request:
+
+```bash
+source .venv/bin/activate
+python -m pytest
+```
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
+
+## Disclaimer
+
+Tico Asset Builder does not provide ROMs, BIOS files, copyrighted artwork, scraping, or download features. You are responsible for using the tool only with files you have the right to use.

@@ -8,7 +8,20 @@ version = "0.1.0"
 description = "Build Tico-compatible cover asset folders from local ROM libraries."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Tico Asset Builder Contributors" }]
+license = "MIT"
+authors = [{ name = "Brett Smeltzer" }]
+keywords = ["tico", "roms", "cover-art", "local-first", "emulation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Environment :: MacOS X",
+  "Intended Audience :: End Users/Desktop",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+  "Topic :: Utilities",
+]
 dependencies = [
   "Pillow>=10.0",
   "RapidFuzz>=3.0",
@@ -16,7 +29,12 @@ dependencies = [
 
 [project.scripts]
 tico-asset-builder = "tico_asset_builder.cli:main"
+tico-prepare-roms = "tico_asset_builder.prepare_cli:main"
+tico-build-tico-folder = "tico_asset_builder.combined_cli:main"
+tico-asset-builder-gui = "tico_asset_builder.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]

@@ -1,3 +1,5 @@
+"""CSV report writers for reviewing local prep and cover-building results."""
+
 from __future__ import annotations
 
 import csv
@@ -13,6 +15,7 @@ def write_reports(
     missing: list[MissingCover],
     skipped: list[SkippedFile],
 ) -> None:
+    """Write asset-builder reports into ``output_root/reports``."""
     reports_dir = output_root / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -54,4 +57,3 @@ def _write_csv(path: Path, headers: list[str], rows: object) -> None:
         writer = csv.writer(handle)
         writer.writerow(headers)
         writer.writerows(rows)
-
