@@ -45,6 +45,8 @@ Tests use fake placeholder ROM files and generated Pillow images only.
 
 The combined workflow creates both `tico/roms/` and `tico/assets/covers/` in one final output folder.
 
+![Final Output Folder Structure](docs/images/final-output-folder-structure.png)
+
 **Extract ROMs Only** is an advanced workflow for creating a ROM-only prepared folder.
 
 ![Extract ROMs Only GUI](docs/images/gui-extract-roms-only.png)
