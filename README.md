@@ -109,6 +109,41 @@ If you are offline and dependencies are already installed in `.venv`, this local
 python -m pip install --no-build-isolation --no-deps .
 ```
 
+## Double-click launchers
+
+If you do not want to type setup commands, use the launcher for your system.
+
+macOS:
+
+- Double-click `launch_tico_asset_builder.command`.
+- If macOS blocks it, right-click the file and choose **Open**.
+- If needed, run:
+
+```bash
+chmod +x launch_tico_asset_builder.command
+```
+
+Windows:
+
+- Double-click `launch_tico_asset_builder.bat`.
+- Windows may show SmartScreen because the script is unsigned.
+- The launcher is plain text, so you can inspect it before running it.
+
+Linux:
+
+```bash
+chmod +x launch_tico_asset_builder.sh
+./launch_tico_asset_builder.sh
+```
+
+The launchers:
+
+- Create `.venv` if needed.
+- Install dependencies into that local project environment.
+- Prefer the optional modern GUI.
+- Fall back to the stable Tkinter GUI if the modern GUI cannot start.
+- Do not modify ROM libraries or run any prep/build workflow automatically.
+
 ## Recommended Simple Workflow
 
 Build one clean Tico-compatible folder:
