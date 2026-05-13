@@ -12,7 +12,7 @@ my-library-tico-output/
   reports/
 ```
 
-The tool can run from the command line or from a simple Tkinter desktop GUI.
+The tool can run from the command line, the stable Tkinter GUI, the optional modern CustomTkinter GUI, or the included double-click launchers.
 
 **Most users should use the combined workflow:**
 
@@ -78,6 +78,13 @@ Reports help users find missing covers, skipped zip contents, ignored files, and
 - No copied source artwork inside `tico/roms/{console}/images/`.
 
 ## Installation For Normal Users
+
+First download the project:
+
+```bash
+git clone https://github.com/B2992/tico-asset-builder.git
+cd tico-asset-builder
+```
 
 ### macOS / Linux
 
